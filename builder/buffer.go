@@ -29,6 +29,7 @@ type Buffer struct {
 	strings.Builder
 	Quoter              Quoter
 	ValueConverter      driver.ValueConverter
+	TablePartsSeparator string
 	ArgumentPlaceholder string
 	ArgumentOrdinal     bool
 	InlineValues        bool
@@ -47,7 +48,7 @@ func (b *Buffer) WriteValue(value any) {
 	}
 
 	// Detect float bits to not lose precision after converting to float64
-	var floatBits = 64
+	floatBits := 64
 	if value != nil && reflect.TypeOf(value).Kind() == reflect.Float32 {
 		floatBits = 32
 	}
@@ -109,6 +110,11 @@ func (b *Buffer) WriteField(table, field string) {
 	b.WriteString(b.escape(table, field))
 }
 
+// WriteTable writes table name.
+func (b *Buffer) WriteTable(table string) {
+	b.WriteString(b.escape(table, ""))
+}
+
 // WriteEscape string.
 func (b *Buffer) WriteEscape(value string) {
 	b.WriteString(b.escape("", value))
@@ -133,13 +139,15 @@ func (b Buffer) escape(table, value string) string {
 				part = strings.TrimSpace(part)
 				parts[i] = b.Quoter.ID(part)
 			}
-			escaped_table = strings.Join(parts, ".")
+			escaped_table = strings.Join(parts, b.TablePartsSeparator)
 		} else {
 			escaped_table = b.Quoter.ID(table)
 		}
 	}
 
-	if value == "*" {
+	if value == "" {
+		escapedValue = escaped_table
+	} else if value == "*" {
 		escapedValue = escaped_table + ".*"
 	} else if len(value) > 0 && value[0] == UnescapeCharacter {
 		escapedValue = value[1:]
@@ -193,6 +201,7 @@ func (b *Buffer) Reset() {
 type BufferFactory struct {
 	Quoter              Quoter
 	ValueConverter      driver.ValueConverter
+	TablePartsSeparator string
 	ArgumentPlaceholder string
 	ArgumentOrdinal     bool
 	InlineValues        bool
@@ -208,6 +217,7 @@ func (bf BufferFactory) Create() Buffer {
 	return Buffer{
 		Quoter:              bf.Quoter,
 		ValueConverter:      conv,
+		TablePartsSeparator: bf.TablePartsSeparator,
 		ArgumentPlaceholder: bf.ArgumentPlaceholder,
 		ArgumentOrdinal:     bf.ArgumentOrdinal,
 		InlineValues:        bf.InlineValues,

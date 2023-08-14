@@ -29,7 +29,7 @@ func TestDelete_Builder(t *testing.T) {
 
 func TestDelete_Builder_ordinal(t *testing.T) {
 	var (
-		bufferFactory = BufferFactory{ArgumentPlaceholder: "$", ArgumentOrdinal: true, Quoter: Quote{IDPrefix: "\"", IDSuffix: "\""}}
+		bufferFactory = BufferFactory{TablePartsSeparator: ".", ArgumentPlaceholder: "$", ArgumentOrdinal: true, Quoter: Quote{IDPrefix: "\"", IDSuffix: "\""}}
 		filter        = Filter{}
 		deleteBuilder = Delete{
 			BufferFactory: bufferFactory,
@@ -42,7 +42,7 @@ func TestDelete_Builder_ordinal(t *testing.T) {
 	assert.Equal(t, "DELETE FROM \"users\";", qs)
 	assert.Equal(t, []any(nil), args)
 
-	qs, args = deleteBuilder.Build("users", where.Eq("id", 1))
-	assert.Equal(t, "DELETE FROM \"users\" WHERE \"users\".\"id\"=$1;", qs)
+	qs, args = deleteBuilder.Build("public.users", where.Eq("id", 1))
+	assert.Equal(t, "DELETE FROM \"public\".\"users\" WHERE \"public\".\"users\".\"id\"=$1;", qs)
 	assert.Equal(t, []any{1}, args)
 }
